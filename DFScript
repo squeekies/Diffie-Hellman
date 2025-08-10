@@ -1,0 +1,110 @@
+
+
+import getpass  # For secure (hidden) input of private keys
+import math     # Not used directly, but kept for potential future math needs
+
+def is_prime(n: int) -> bool:
+    """Simple function to check if a number is prime (needed for 'p' in Diffie-Hellman)."""
+    if n <= 1:
+        return False
+    if n <= 3:
+        return True
+    if n % 2 == 0 or n % 3 == 0:
+        return False
+    i = 5
+    while i * i <= n:
+        if n % i == 0 or n % (i + 2) == 0:
+            return False
+        i += 6
+    return True
+
+def compute_public_key(base: int, exponent: int, modulus: int) -> int:
+    """Calculates (base ^ exponent) mod modulus efficiently."""
+    return pow(base, exponent, modulus)
+
+def compute_shared_key(public_key: int, private_key: int, modulus: int) -> int:
+    """Calculates the shared secret: (public_key ^ private_key) mod modulus."""
+    return pow(public_key, private_key, modulus)
+
+def run_key_exchange():
+    """Main logic for one key exchange session, with step-by-step explanations."""
+    print("\n=== Welcome to Diffie-Hellman Key Exchange Simulator ===")
+    print("This tool helps two 'users' agree on a secret key over an insecure channel.")
+    print("Steps:")
+    print("1. Choose public values: a prime number 'p' and a generator 'g'.")
+    print("2. Each user picks a private key (secret number).")
+    print("3. Compute and 'exchange' public keys.")
+    print("4. Compute the shared secret key.")
+    print("Note: In real life, use large numbers for security!\n")
+
+    try:
+        # Step 1: Public prime modulus 'p'
+        print("First, enter 'p' (a prime number greater than 2, e.g., 23):")
+        p_str = input("> ")
+        p = int(p_str)
+        if p <= 2 or not is_prime(p):
+            raise ValueError(f"Oops! {p} isn't a prime greater than 2. Try again (examples: 5, 17, 23).")
+
+        # Step 2: Public generator 'g'
+        print(f"\nNext, enter 'g' (a number between 2 and {p-1}, e.g., 5):")
+        g_str = input("> ")
+        g = int(g_str)
+        if not (1 < g < p):
+            raise ValueError(f"g should be between 2 and {p-1}. Try again.")
+
+        # Step 3: Private key for User 1 'a' (hidden input)
+        print("\nNow, User 1: Enter your private key 'a' (a secret number between 1 and {p-2}, e.g., 4):")
+        print("(This will be hidden for security.)")
+        a_str = getpass.getpass("> ")
+        a = int(a_str)
+        if not (1 <= a < p - 1):
+            raise ValueError(f"a should be between 1 and {p-2}. Try again.")
+
+        # Step 4: Private key for User 2 'b' (hidden input)
+        print("\nUser 2: Enter your private key 'b' (a secret number between 1 and {p-2}, e.g., 3):")
+        print("(This will be hidden for security.)")
+        b_str = getpass.getpass("> ")
+        b = int(b_str)
+        if not (1 <= b < p - 1):
+            raise ValueError(f"b should be between 1 and {p-2}. Try again.")
+
+        # Step 5: Compute public keys
+        print("\nComputing public keys (these would be shared publicly)...")
+        A = compute_public_key(g, a, p)
+        print(f"User 1's public key 'A' (g^a mod p): {A}")
+
+        B = compute_public_key(g, b, p)
+        print(f"User 2's public key 'B' (g^b mod p): {B}")
+
+        # Step 6: Compute shared keys
+        print("\nNow, each user computes the shared secret using the other's public key...")
+        key_user1 = compute_shared_key(B, a, p)
+        print(f"User 1's shared key (B^a mod p): {key_user1}")
+
+        key_user2 = compute_shared_key(A, b, p)
+        print(f"User 2's shared key (A^b mod p): {key_user2}")
+
+        # Step 7: Verify
+        if key_user1 == key_user2:
+            print("\nGreat! The shared keys match. You can now use this key for encryption.")
+        else:
+            print("\nUh oh! Keys don't match. Something went wrong—try again.")
+
+    except ValueError as ve:
+        print(f"\nInput error: {ve}. Please try again.")
+    except Exception as e:
+        print(f"\nUnexpected error: {e}. Please try again.")
+
+    print("\nReminder: This is for learning. Real cryptography uses huge numbers and secure random choices.")
+
+def main():
+    """Runs the key exchange in a loop until the user quits."""
+    while True:
+        run_key_exchange()
+        print("\nWant to run another exchange? (y/n):")
+        if input("> ").lower() != 'y':
+            print("Goodbye!")
+            break
+
+if __name__ == "__main__":
+    main()
